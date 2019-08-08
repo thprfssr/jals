@@ -67,3 +67,81 @@ def sanitize(word, *args, **kwargs):
         sanitized_word += c
 
     return sanitized_word
+
+# This function is a <= relation between two Danetian words. The function
+# sanitizes the pair of words, so the words must be passed unsanitized.
+def total_order(word_a, word_b):
+    # We sanitize the pair of words, ignoring colons for now.
+    ua = sanitize(word_a, colons = False)
+    ub = sanitize(word_b, colons = False)
+
+    # We are gonna check letter by letter, up to the length of the
+    # smallest word.
+    na = len(ua)
+    nb = len(ub)
+    n = min(na, nb)
+    alphabet = MINUSCULE_LATIN_ALPHABET
+    for k in range(0, n):
+        # Go letter by letter, from the beginning of each word. The moment we
+        # find a pair of letters which are not equal, then we know that one
+        # word is greater than the other.
+        ca = ua[k]
+        cb = ub[k]
+        i = alphabet.index(ca)
+        j = alphabet.index(cb)
+
+        # Exit the function if we find a pair of letters which are not equal.
+        if i < j:
+            return True
+        if i > j:
+            return False
+
+    # If the function hasn't exited yet, then it means that all the letters
+    # that we checked are identical. We checked all the letters up to the
+    # length of the smallest word. Hence, if the function still hasn't exited,
+    # this means that the two words have identical letters up to the length of
+    # the smallest word. Hence, it's possible that one word is longer than
+    # the other. The shorter word goes before the longer word.
+    if na < nb:
+        return True
+    if na > nb:
+        return False
+
+    # If the function still hasn't exited, then the two words have exactly the
+    # same length, and exactly the same letters. We must now pay attention to
+    # the placement of the macrons. I want to emulate the following order:
+    # aka
+    # akā
+    # āka
+    # ākā
+    # So we look at the first letter. If one has a macron and the other does
+    # not, then the unmacronated word goes before the macronated word.
+    # Otherwise, we look at the following letter.
+    #
+    # First we sanitize the original words, but now we include the colons
+    # (which are transformed from original macrons):
+    ua = sanitize(word_a, colons = True)
+    ub = sanitize(word_b, colons = True)
+    na = len(ua)
+    nb = len(ub)
+    n = min(na, nb)
+    for k in range(0, n):
+        # Fetch the characters from the strings ua and ub
+        ca = ua[k]
+        cb = ub[k]
+
+        if ca == cb:
+            continue
+        elif ca != COLON and cb == COLON:
+            return True
+        elif ca == COLON and cb != COLON:
+            return False
+
+    # By this point, if the function hasn't exited, then the two words are
+    # of the same length, have the same characters, and have the same placement
+    # of macrons. Then, they can only differ in the placement of spaces and
+    # dashes. At the moment of writing this function, no importance is given
+    # to this. Hence, "akapara", "aka para", and "aka-para" are all identical.
+    # In order to make this function a total order, rather than a strict total
+    # order, we return True.
+    return True
